@@ -98,6 +98,33 @@
   .skeleton{background:linear-gradient(90deg,#eee5d2 25%,#f7f1e4 50%,#eee5d2 75%);background-size:200% 100%;animation:sk 1.2s infinite;border-radius:14px;height:86px}
   @keyframes sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
   .kosong-info{text-align:center;padding:30px 10px;font-size:14px;opacity:.6}
+
+  /* ---------- BACKOFFICE ---------- */
+  #navAdmin button{background:rgba(255,255,255,.12);color:var(--krem);padding:7px 14px;font-size:13px;border-radius:8px}
+  #navAdmin button.nav-aktif{background:var(--emas);color:var(--coklat);font-weight:600}
+  .bo-tabs{display:flex;gap:8px;margin:12px 0}
+  .bo-tabs button{background:#fff;color:var(--hijau);border:1.5px solid var(--hijau);border-radius:20px;padding:8px 16px;font-weight:600;font-size:13px}
+  .bo-tabs button.aktif{background:var(--hijau);color:var(--krem)}
+  .bo-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  .bo-bar input[type=date]{padding:10px;border:2px solid var(--hijau);border-radius:10px;font-size:14px;background:#fff}
+  .bo-form{display:flex;gap:8px;flex-wrap:wrap}
+  .bo-form input{padding:11px;border:2px solid var(--hijau);border-radius:10px;font-size:14px;width:140px;background:#fff}
+  .kartu-stat{background:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 2px 8px rgba(27,58,47,.08)}
+  .kartu-stat .lbl{font-size:12px;opacity:.65}
+  .kartu-stat .val{font-family:'Fraunces',serif;font-size:22px;color:var(--hijau);margin-top:2px}
+  .grid-stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+  .jam-bar{display:flex;align-items:flex-end;gap:3px;height:90px;background:#fff;border-radius:12px;padding:12px}
+  .jam-bar .b{flex:1;background:var(--rust);border-radius:3px 3px 0 0;position:relative;min-height:2px}
+  .jam-bar .b span{position:absolute;bottom:-16px;left:0;right:0;text-align:center;font-size:8px;opacity:.6}
+  .tabel{width:100%;background:#fff;border-radius:12px;overflow:hidden;font-size:13px;border-collapse:collapse}
+  .tabel th{background:var(--hijau);color:var(--krem);padding:9px 10px;text-align:left;font-weight:600}
+  .tabel td{padding:8px 10px;border-bottom:1px solid rgba(62,39,35,.08)}
+  .tabel select{padding:5px;border:1px solid var(--hijau);border-radius:6px;background:#fff;font-size:12px}
+  .toggle{width:40px;height:22px;border-radius:20px;background:#ccc;position:relative;cursor:pointer;border:none}
+  .toggle.on{background:var(--hijau)}
+  .toggle::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s}
+  .toggle.on::after{left:20px}
+  h3{font-size:16px}
 </style>
 </head>
 <body>
@@ -122,6 +149,10 @@
 <div id="viewApp" class="hidden">
   <header>
     <div class="brand">Restless POS</div>
+    <div id="navAdmin" class="hidden" style="display:flex;gap:4px">
+      <button id="navBtnMeja" class="nav-aktif" onclick="pindahView('meja')">Meja</button>
+      <button id="navBtnBo" onclick="pindahView('bo')">Backoffice</button>
+    </div>
     <div>
       <span class="user" id="labelUser"></span>
       <button onclick="doLogout()">Keluar</button>
@@ -132,6 +163,52 @@
     <h2 style="margin:14px 0 4px">Denah Meja</h2>
     <p style="font-size:13px;opacity:.65">Tap meja kosong untuk buka sesi &amp; cetak QR. Tap meja terisi untuk kelola order.</p>
     <div id="areaMeja"><div class="skeleton"></div></div>
+  </div>
+
+  <!-- ================= BACKOFFICE (ADMIN) ================= -->
+  <div id="viewBo" class="hidden" style="padding:16px;max-width:1100px;margin:0 auto">
+    <div class="bo-tabs">
+      <button class="aktif" onclick="boTab('lap',this)">Laporan</button>
+      <button onclick="boTab('prod',this)">Produk</button>
+      <button onclick="boTab('meja',this)">Meja &amp; Rekon</button>
+    </div>
+
+    <!-- LAPORAN -->
+    <div id="boLap">
+      <div class="bo-bar">
+        <input type="date" id="lapTanggal" onchange="loadLaporan()">
+        <button class="btn-outline" onclick="kirimRekap()">Kirim Rekap ke Telegram</button>
+      </div>
+      <div id="lapArea"><div class="skeleton"></div></div>
+    </div>
+
+    <!-- PRODUK -->
+    <div id="boProd" class="hidden">
+      <div class="bo-bar">
+        <button class="btn-outline" onclick="syncHPP()" id="btnSync">Sync dari HPP Manager</button>
+        <span id="syncInfo" style="font-size:13px;opacity:.7"></span>
+      </div>
+      <div id="prodArea"><div class="skeleton"></div></div>
+    </div>
+
+    <!-- MEJA & REKON -->
+    <div id="boMeja" class="hidden">
+      <h3 style="margin:8px 0">Tambah Meja</h3>
+      <div class="bo-form">
+        <input id="mjNo" placeholder="No meja">
+        <input id="mjLantai" placeholder="Lantai" value="1">
+        <input id="mjKap" type="number" placeholder="Kapasitas" value="2">
+        <button class="btn-utama" style="width:auto;padding:12px 18px" onclick="tambahMeja()">Tambah</button>
+      </div>
+      <p style="font-size:12px;opacity:.6;margin-top:6px">Menghapus meja: hapus barisnya langsung di sheet Meja (pastikan tidak sedang TERISI).</p>
+      <h3 style="margin:22px 0 8px">Rekonsiliasi Harian (uji coba paralel)</h3>
+      <div class="bo-form">
+        <input type="date" id="rkTanggal">
+        <input id="rkTotal" type="number" inputmode="numeric" placeholder="Total POS lama (Rp)">
+        <button class="btn-utama" style="width:auto;padding:12px 18px" onclick="simpanRekon()">Hitung Delta</button>
+      </div>
+      <div id="rkHasil" style="margin-top:12px;font-size:14px"></div>
+    </div>
   </div>
 </div>
 
@@ -199,6 +276,8 @@
 var state = {
   kode: localStorage.getItem('rpos_kode') || '',
   nama: localStorage.getItem('rpos_nama') || '',
+  role: localStorage.getItem('rpos_role') || '',
+  view: 'meja',
   meja: [],
   produk: [],
   sesiAktif: null,   // detail sesi yang dibuka di modal
@@ -242,8 +321,10 @@ function doLogin(){
   state.kode = kode;
   api('login').then(function(d){
     state.nama = d.nama;
+    state.role = d.role;
     localStorage.setItem('rpos_kode', kode);
     localStorage.setItem('rpos_nama', d.nama);
+    localStorage.setItem('rpos_role', d.role);
     masukApp();
   }).catch(function(e){
     state.kode = '';
@@ -254,6 +335,7 @@ function doLogin(){
 function doLogout(){
   localStorage.removeItem('rpos_kode');
   localStorage.removeItem('rpos_nama');
+  localStorage.removeItem('rpos_role');
   clearInterval(state.pollTimer);
   location.reload();
 }
@@ -262,9 +344,172 @@ function masukApp(){
   document.getElementById('viewLogin').classList.add('hidden');
   document.getElementById('viewApp').classList.remove('hidden');
   document.getElementById('labelUser').textContent = state.nama;
+  if (state.role === 'ADMIN') document.getElementById('navAdmin').classList.remove('hidden');
   muatMeja();
   muatProduk();
-  state.pollTimer = setInterval(muatMeja, 5000);
+  state.pollTimer = setInterval(function(){ if (state.view === 'meja') muatMeja(); }, 5000);
+}
+
+// ================= NAV & BACKOFFICE =================
+function pindahView(v){
+  state.view = v;
+  document.getElementById('viewMeja').classList.toggle('hidden', v !== 'meja');
+  document.getElementById('viewBo').classList.toggle('hidden', v !== 'bo');
+  document.getElementById('navBtnMeja').classList.toggle('nav-aktif', v === 'meja');
+  document.getElementById('navBtnBo').classList.toggle('nav-aktif', v === 'bo');
+  if (v === 'bo') {
+    var t = document.getElementById('lapTanggal');
+    if (!t.value) t.value = new Date().toISOString().slice(0,10);
+    loadLaporan();
+  } else {
+    muatMeja();
+  }
+}
+
+function boTab(t, btn){
+  document.getElementById('boLap').classList.toggle('hidden', t !== 'lap');
+  document.getElementById('boProd').classList.toggle('hidden', t !== 'prod');
+  document.getElementById('boMeja').classList.toggle('hidden', t !== 'meja');
+  document.querySelectorAll('.bo-tabs button').forEach(function(b){ b.classList.remove('aktif'); });
+  btn.classList.add('aktif');
+  if (t === 'prod') loadProdukAdmin();
+}
+
+function loadLaporan(){
+  var tgl = document.getElementById('lapTanggal').value;
+  document.getElementById('lapArea').innerHTML = '<div class="skeleton"></div>';
+  api('adminLaporan', { tanggal: tgl }).then(function(d){
+    var html = '<div class="grid-stat">' +
+      '<div class="kartu-stat"><div class="lbl">Omzet</div><div class="val">' + rp(d.omzet) + '</div></div>' +
+      '<div class="kartu-stat"><div class="lbl">Jumlah Bill</div><div class="val">' + d.jumlahBill + '</div></div>' +
+      '<div class="kartu-stat"><div class="lbl">Total Diskon</div><div class="val">' + rp(d.totalDiskon) + '</div></div>';
+    Object.keys(d.perMetode).forEach(function(m){
+      html += '<div class="kartu-stat"><div class="lbl">' + m + '</div><div class="val">' + rp(d.perMetode[m]) + '</div></div>';
+    });
+    html += '</div>';
+
+    var jamKeys = Object.keys(d.perJam).sort();
+    if (jamKeys.length) {
+      var max = Math.max.apply(null, jamKeys.map(function(j){ return d.perJam[j]; }));
+      html += '<h3 style="margin:6px 0">Order per Jam</h3><div class="jam-bar" style="margin-bottom:26px">';
+      for (var h = 9; h <= 23; h++) {
+        var key = ('0' + h).slice(-2);
+        var v = d.perJam[key] || 0;
+        html += '<div class="b" style="height:' + (max ? Math.round(v / max * 100) : 0) + '%" title="' + key + ':00 — ' + v + ' order"><span>' + key + '</span></div>';
+      }
+      html += '</div>';
+    }
+
+    if (d.topProduk.length) {
+      html += '<h3 style="margin:6px 0">Top Produk</h3><table class="tabel" style="margin-bottom:16px"><tr><th>Produk</th><th>Qty</th><th>Omzet</th></tr>';
+      d.topProduk.forEach(function(p){
+        html += '<tr><td>' + p.produk + '</td><td>' + p.qty + '</td><td>' + rp(p.omzet) + '</td></tr>';
+      });
+      html += '</table>';
+    }
+
+    var stKeys = Object.keys(d.perStation);
+    var katKeys = Object.keys(d.perKategori);
+    if (stKeys.length || katKeys.length) {
+      html += '<h3 style="margin:6px 0">Per Station &amp; Kategori</h3><table class="tabel" style="margin-bottom:16px">';
+      stKeys.forEach(function(s){ html += '<tr><td><b>' + s + '</b></td><td>' + rp(d.perStation[s]) + '</td></tr>'; });
+      katKeys.forEach(function(k){ html += '<tr><td>' + k + '</td><td>' + rp(d.perKategori[k]) + '</td></tr>'; });
+      html += '</table>';
+    }
+
+    if (d.bills.length) {
+      html += '<h3 style="margin:6px 0">Riwayat Bill</h3><table class="tabel"><tr><th>Waktu</th><th>Meja</th><th>Total</th><th>Metode</th></tr>';
+      d.bills.forEach(function(b){
+        html += '<tr><td>' + b.waktu + '</td><td>' + b.noMeja + '</td><td>' + rp(b.total) + '</td><td>' + b.metode + '</td></tr>';
+      });
+      html += '</table>';
+    } else {
+      html += '<div class="kosong-info">Belum ada bill di tanggal ini.</div>';
+    }
+    document.getElementById('lapArea').innerHTML = html;
+  }).catch(function(e){
+    document.getElementById('lapArea').innerHTML = '<div class="kosong-info">' + e.message + '</div>';
+  });
+}
+
+function kirimRekap(){
+  api('adminKirimRekap', { tanggal: document.getElementById('lapTanggal').value }).then(function(){
+    toast('Rekap terkirim ke Telegram');
+  }).catch(function(e){ toast(e.message); });
+}
+
+function loadProdukAdmin(){
+  document.getElementById('prodArea').innerHTML = '<div class="skeleton"></div>';
+  api('adminGetProdukAll').then(function(list){
+    if (!list.length) {
+      document.getElementById('prodArea').innerHTML = '<div class="kosong-info">Sheet Produk kosong — coba Sync dari HPP Manager.</div>';
+      return;
+    }
+    var html = '<table class="tabel"><tr><th>Produk</th><th>Kategori</th><th>Harga</th><th>Station</th><th>Aktif</th></tr>';
+    list.forEach(function(p){
+      var esc = String(p.nama).replace(/'/g, "\\'");
+      html += '<tr><td>' + p.nama + (p.gambar ? '' : ' <span style="opacity:.4;font-size:11px">(tanpa gambar)</span>') + '</td>' +
+        '<td>' + (p.kategori || '-') + '</td><td>' + rp(p.harga) + '</td>' +
+        '<td><select onchange="setProduk(\'' + esc + '\', {station: this.value})">' +
+          '<option' + (p.station === 'KITCHEN' ? ' selected' : '') + '>KITCHEN</option>' +
+          '<option' + (p.station === 'BAR' ? ' selected' : '') + '>BAR</option>' +
+        '</select></td>' +
+        '<td><button class="toggle ' + (p.aktif ? 'on' : '') + '" onclick="setProduk(\'' + esc + '\', {aktif: ' + (!p.aktif) + '})"></button></td></tr>';
+    });
+    html += '</table>';
+    document.getElementById('prodArea').innerHTML = html;
+  }).catch(function(e){
+    document.getElementById('prodArea').innerHTML = '<div class="kosong-info">' + e.message + '</div>';
+  });
+}
+
+function setProduk(nama, perubahan){
+  api('adminSetProduk', Object.assign({ nama: nama }, perubahan)).then(function(){
+    toast('Tersimpan: ' + nama);
+    loadProdukAdmin();
+    muatProduk(); // refresh cache produk kasir
+  }).catch(function(e){ toast(e.message); loadProdukAdmin(); });
+}
+
+function syncHPP(){
+  var btn = document.getElementById('btnSync');
+  btn.disabled = true;
+  document.getElementById('syncInfo').textContent = 'Sinkronisasi…';
+  api('adminSyncHPP').then(function(d){
+    btn.disabled = false;
+    document.getElementById('syncInfo').textContent =
+      'Update ' + d.update + ', baru ' + d.baru + ', dilewati ' + d.dilewati + '. ' + d.pesan;
+    loadProdukAdmin();
+    muatProduk();
+  }).catch(function(e){
+    btn.disabled = false;
+    document.getElementById('syncInfo').textContent = '';
+    toast(e.message);
+  });
+}
+
+function tambahMeja(){
+  api('adminTambahMeja', {
+    noMeja: document.getElementById('mjNo').value,
+    lantai: document.getElementById('mjLantai').value,
+    kapasitas: document.getElementById('mjKap').value
+  }).then(function(d){
+    toast('Meja ' + d.noMeja + ' ditambahkan');
+    document.getElementById('mjNo').value = '';
+  }).catch(function(e){ toast(e.message); });
+}
+
+function simpanRekon(){
+  api('adminRekonsiliasi', {
+    tanggal: document.getElementById('rkTanggal').value,
+    totalPosLama: Number(document.getElementById('rkTotal').value)
+  }).then(function(d){
+    var warna = d.delta === 0 ? 'var(--hijau)' : 'var(--rust)';
+    document.getElementById('rkHasil').innerHTML =
+      'POS lama: <b>' + rp(d.totalPosLama) + '</b> · Restless POS: <b>' + rp(d.totalRestlessPos) + '</b> · ' +
+      'Delta: <b style="color:' + warna + '">' + rp(d.delta) + '</b><br>' +
+      '<span style="font-size:12px;opacity:.65">Tersimpan di sheet Rekonsiliasi. Delta positif = POS lama lebih besar (ada transaksi yang belum lewat Restless POS).</span>';
+  }).catch(function(e){ toast(e.message); });
 }
 
 // ================= MEJA =================
@@ -483,6 +728,8 @@ function konfirmasiBayar(){
 if (state.kode) {
   api('login').then(function(d){
     state.nama = d.nama;
+    state.role = d.role;
+    localStorage.setItem('rpos_role', d.role);
     masukApp();
   }).catch(function(){
     localStorage.removeItem('rpos_kode');
